@@ -6,8 +6,11 @@
 //
 
 #import "ViewController.h"
+#import "Greetings.h"
 
 @interface ViewController ()
+
+@property (nonatomic, nullable, weak) IBOutlet UILabel *label;
 
 @end
 
@@ -15,8 +18,7 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
+    self.label.text = Greetings.greet;
 }
-
 
 @end

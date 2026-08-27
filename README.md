@@ -15,3 +15,6 @@ pod 'PMPublicIntTest'
 
 [Greetings greet];
 ```
+
+## Cocoa Pods
+https://github.com/CocoaPods/Specs/tree/master/Specs/f/f/f/PMPublicIntTest
