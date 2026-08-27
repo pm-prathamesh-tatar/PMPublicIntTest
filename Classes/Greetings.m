@@ -2,8 +2,8 @@
 
 @implementation Greetings
 
-+ (void)greet {
-    NSLog(@"Hello World!");
++ (NSString *)greet {
+    return @"Hello World!";
 }
 
 @end

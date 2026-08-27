@@ -2,6 +2,6 @@
 
 @interface Greetings : NSObject
 
-+ (void)greet;
++ (NSString *)greet;
 
 @end
