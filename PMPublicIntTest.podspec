@@ -1,6 +1,6 @@
 Pod::Spec.new do |spec|
   spec.name         = 'PMPublicIntTest'
-  spec.version      = '0.3.0'
+  spec.version      = '0.4.0'
   spec.summary      = 'A simple Objective-C library with a Greetings class.'
   spec.homepage     = 'https://github.com/pm-prathamesh-tatar/PMPublicIntTest'
   spec.license      = {
