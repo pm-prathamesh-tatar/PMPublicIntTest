@@ -1,0 +1,38 @@
+default_platform(:ios)
+
+def push_podspec(path:, retry_count: 0)
+  push_args = {
+    path: path,
+    skip_import_validation: true,
+    allow_warnings: true,
+    verbose: true
+  }
+
+  push_count = 0
+  max_attempts = 1 + retry_count
+
+  begin
+    push_count += 1
+    pod_push(**push_args)
+  rescue => e
+    message = e.message.to_s
+    if push_count > 1 && message.include?("Unable to accept duplicate entry for:")
+      UI.success("Podspec already exists on attempt #{push_count}. Treating as success.")
+    elsif push_count < max_attempts
+      UI.important("pod_push failed on attempt #{push_count}. Retrying... Error: #{message}")
+      retry
+    else
+      raise
+    end
+  end
+end
+
+platform :ios do
+  desc "push sdk podspec to cocoapods repo"
+  lane :releasePMPublicIntTest do
+    push_podspec(
+      path: "PMPublicIntTest.podspec",
+      retry_count: 1
+    )
+  end
+end

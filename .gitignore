@@ -6,3 +6,6 @@ xcuserdata/
 
 ## Cocoa Pods
 Pods/
+
+## Fastlane
+fastlane/report.xml
