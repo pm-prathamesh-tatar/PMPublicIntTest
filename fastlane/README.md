@@ -21,7 +21,7 @@ For _fastlane_ installation instructions, see [Installing _fastlane_](https://do
 [bundle exec] fastlane ios releasePMPublicIntTest
 ```
 
-push sdk podspec to cocoapods repo
+push PMPublicIntTest to CocoaPods repo
 
 ----
 

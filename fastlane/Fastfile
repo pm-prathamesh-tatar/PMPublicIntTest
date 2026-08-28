@@ -1,37 +1,51 @@
+require "open3"
+
 default_platform(:ios)
 
+DUPLICATE_PODSPEC_ERROR = "Unable to accept duplicate entry for:".freeze
+
 def push_podspec(path:, retry_count: 0)
-  push_args = {
-    path: path,
-    skip_import_validation: true,
-    allow_warnings: true,
-    verbose: true
-  }
+  command = ["pod", "trunk", "push", path]
 
-  push_count = 0
-  max_attempts = 1 + retry_count
+  max_attempts = retry_count + 1
 
-  begin
-    push_count += 1
-    pod_push(**push_args)
-  rescue => e
-    message = e.message.to_s
-    if push_count > 1 && message.include?("Unable to accept duplicate entry for:")
-      UI.success("Podspec already exists on attempt #{push_count}. Treating as success.")
-    elsif push_count < max_attempts
-      UI.important("pod_push failed on attempt #{push_count}. Retrying... Error: #{message}")
-      retry
+  1.upto(max_attempts) do |attempt|
+    UI.command(command.join(" "))
+
+    stdout, stderr, status = Open3.capture3(*command)
+    output = [stdout, stderr].compact.join.strip
+
+    UI.message(output) unless output.empty?
+
+    return if status.success?
+
+    error_message =
+      output.empty? ? "pod trunk push failed with exit status #{status.exitstatus}" : output
+
+    if output.include?(DUPLICATE_PODSPEC_ERROR)
+      if attempt == 1
+        UI.user_error!(error_message)
+      else
+        UI.success("Podspec already exists on attempt #{attempt}. Treating as success.")
+        return
+      end
+    end
+
+    if attempt < max_attempts
+      UI.important(
+        "pod trunk push failed on attempt #{attempt}/#{max_attempts}. Retrying... Error: #{error_message}"
+      )
     else
-      raise
+      UI.user_error!(error_message)
     end
   end
 end
 
 platform :ios do
-  desc "push sdk podspec to cocoapods repo"
+  desc "push PMPublicIntTest to CocoaPods repo"
   lane :releasePMPublicIntTest do
     push_podspec(
-      path: "PMPublicIntTest.podspec",
+      path: "../PMPublicIntTest.podspec",
       retry_count: 1
     )
   end
