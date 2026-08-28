@@ -3,7 +3,7 @@
 @implementation Greetings
 
 + (NSString *)greet {
-    return @"Hello World!";
+    return @"Hello Universe!";
 }
 
 @end
