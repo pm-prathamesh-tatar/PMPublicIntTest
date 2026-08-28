@@ -33,7 +33,7 @@ def push_podspec(path:, retry_count: 0)
 
     if attempt < max_attempts
       UI.important(
-        "pod trunk push failed on attempt #{attempt}/#{max_attempts}. Retrying... Error: #{error_message}"
+        "pod trunk push failed on attempt #{attempt}/#{max_attempts}. Retrying... \nError: #{error_message}"
       )
     else
       UI.user_error!(error_message)
