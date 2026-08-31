@@ -4,6 +4,16 @@ default_platform(:ios)
 
 DUPLICATE_PODSPEC_ERROR = "Unable to accept duplicate entry for:".freeze
 
+# Pushes a podspec to CocoaPods Trunk with configurable retry logic.
+#
+# If a previous attempt pushed the podspec to CocoaPods Trunk but the request timed out or
+# experienced a transient network failure, subsequent retry attempts may fail with a duplicate
+# entry error. This helper detects duplicate entry responses on retry attempts (attempt > 1) and
+# treats them as a success to avoid false-positive CI/CD build failures.
+#
+# @param path [String] Relative or absolute path to the `.podspec` file to push.
+# @param retry_count [Integer] Number of retry attempts on failure (default: 0).
+#
 def push_podspec(path:, retry_count: 0)
   command = ["pod", "trunk", "push", path]
 
@@ -12,16 +22,22 @@ def push_podspec(path:, retry_count: 0)
   1.upto(max_attempts) do |attempt|
     UI.command(command.join(" "))
 
+    # Execute `pod trunk push` and capture combined output and process status
     stdout, stderr, status = Open3.capture3(*command)
     output = [stdout, stderr].compact.join.strip
 
     UI.message(output) unless output.empty?
 
+    # Successfully published to CocoaPods Trunk
     return if status.success?
 
     error_message =
       output.empty? ? "pod trunk push failed with exit status #{status.exitstatus}" : output
 
+    # Handle duplicate podspec error:
+    # - If it fails on attempt 1, fail immediately (podspec version already exists).
+    # - If it fails on attempt > 1, the prior attempt likely succeeded despite a network timeout/error,
+    #   so treat it as a successful publish.
     if output.include?(DUPLICATE_PODSPEC_ERROR)
       if attempt == 1
         UI.user_error!(error_message)
@@ -31,6 +47,7 @@ def push_podspec(path:, retry_count: 0)
       end
     end
 
+    # Retry if remaining attempts are available; otherwise raise a user error
     if attempt < max_attempts
       UI.important(
         "pod trunk push failed on attempt #{attempt}/#{max_attempts}. Retrying... \nError: #{error_message}"
