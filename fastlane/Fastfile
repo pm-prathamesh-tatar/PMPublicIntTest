@@ -6,10 +6,9 @@ DUPLICATE_PODSPEC_ERROR = "Unable to accept duplicate entry for:".freeze
 
 # Pushes a podspec to CocoaPods Trunk with configurable retry logic.
 #
-# If a previous attempt pushed the podspec to CocoaPods Trunk but the request timed out or
-# experienced a transient network failure, subsequent retry attempts may fail with a duplicate
-# entry error. This helper detects duplicate entry responses on retry attempts (attempt > 1) and
-# treats them as a success to avoid false-positive CI/CD build failures.
+# If a push fails with a duplicate entry error (e.g. if the podspec already exists on CocoaPods Trunk,
+# or if a prior attempt succeeded remotely despite a local network timeout/error), it is treated
+# as a success so that the CI/CD pipeline does not fail unnecessarily.
 #
 # @param path [String] Relative or absolute path to the `.podspec` file to push.
 # @param retry_count [Integer] Number of retry attempts on failure (default: 0).
@@ -31,21 +30,14 @@ def push_podspec(path:, retry_count: 0)
     # Successfully published to CocoaPods Trunk
     return if status.success?
 
-    error_message =
-      output.empty? ? "pod trunk push failed with exit status #{status.exitstatus}" : output
-
-    # Handle duplicate podspec error:
-    # - If it fails on attempt 1, fail immediately (podspec version already exists).
-    # - If it fails on attempt > 1, the prior attempt likely succeeded despite a network timeout/error,
-    #   so treat it as a successful publish.
+    # If the podspec is already published on CocoaPods Trunk (or a previous attempt succeeded despite a network error),
+    # treat the duplicate entry error as a successful push.
     if output.include?(DUPLICATE_PODSPEC_ERROR)
-      if attempt == 1
-        UI.user_error!(error_message)
-      else
-        UI.success("Podspec already exists on attempt #{attempt}. Treating as success.")
-        return
-      end
+      UI.success("Podspec already exists on attempt #{attempt}. Treating as success.")
+      return
     end
+
+    error_message = output.empty? ? "pod trunk push failed with exit status #{status.exitstatus}" : output
 
     # Retry if remaining attempts are available; otherwise raise a user error
     if attempt < max_attempts
