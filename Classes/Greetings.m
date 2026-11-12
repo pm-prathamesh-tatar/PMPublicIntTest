@@ -3,7 +3,7 @@
 @implementation Greetings
 
 + (NSString *)greet {
-  return @"PMPublicIntTest 0.7.0";
+  return @"PMPublicIntTest 0.8.0";
 }
 
 @end
